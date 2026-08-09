@@ -39,6 +39,12 @@
   .field label{display:block; font-family:'Courier New', monospace; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;}
   .field select, .field input{padding:8px; border:1px solid var(--line); background:#fff; font-size:13px; font-family:inherit;}
 
+  nav.tabs{display:flex; gap:2px; margin-bottom:20px;}
+  .tab-btn{font-family:'Courier New', monospace; font-size:12px; letter-spacing:1px; text-transform:uppercase; padding:10px 18px; background:var(--paper-card); border:1px solid var(--line); border-bottom:none; cursor:pointer; color:var(--ink-soft);}
+  .tab-btn.active{background:var(--navy); color:var(--paper); border-color:var(--navy);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
   .batch-panel{background:#F7F4EC; border:1px dashed var(--navy); padding:16px 20px; margin-bottom:20px;}
   .batch-title{font-family:'Courier New', monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--navy); margin:0 0 12px;}
   .batch-grid{display:flex; gap:10px; align-items:end; flex-wrap:wrap;}
@@ -96,11 +102,22 @@
 // CONFIGURAÇÃO — troque pelos dados do SEU projeto Supabase
 // (Painel do Supabase > Project Settings > API)
 // =====================================================================
-const SUPABASE_URL = 'https://gfvekfxwdvleevksfkky.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_-1vrk4jekR2LYwuQ0xRQVg_i0-7qw9r';
+const SUPABASE_URL = 'COLOQUE_AQUI_SUA_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'COLOQUE_AQUI_SUA_SUPABASE_ANON_KEY';
 // =====================================================================
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function showFatalError(msg){
+  document.getElementById('app').innerHTML = `<div class="loading" style="color:var(--brick); max-width:520px; margin:80px auto; text-align:left;">
+    <strong>Não foi possível carregar o app.</strong><br><br>${msg}
+  </div>`;
+}
+
+if(!SUPABASE_URL || SUPABASE_URL.includes('COLOQUE_AQUI') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('COLOQUE_AQUI')){
+  showFatalError('As credenciais do Supabase ainda não foram configuradas. Abra o arquivo index.html e substitua SUPABASE_URL e SUPABASE_ANON_KEY, no topo do &lt;script&gt;, pelos valores reais do seu projeto (Project Settings → API no painel do Supabase).');
+  throw new Error('Configuração pendente: SUPABASE_URL/SUPABASE_ANON_KEY não foram preenchidos.');
+}
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const DOW = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -125,23 +142,19 @@ function defaultActivity(){
 
 // ---------- BOOT ----------
 async function boot(){
-  const { data: { session } } = await db.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
   if(!session){
     renderAuth();
     return;
   }
   currentUser = session.user;
-  const { data: profile, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
   if(error || !profile){
     renderAuth('Não foi possível carregar seu perfil. Tente entrar novamente.');
     return;
   }
   currentProfile = profile;
-  if(currentProfile.papel === 'gestor'){
-    renderGestorApp();
-  } else {
-    renderArquitetoApp();
-  }
+  renderApp();
 }
 
 // ---------- TELA DE LOGIN / CADASTRO ----------
@@ -197,7 +210,7 @@ async function submitLogin(){
       msgBox.innerHTML = '<p class="auth-error">Informe seu nome.</p>';
       return;
     }
-    const { error } = await db.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email, password: senha, options: { data: { nome } }
     });
     if(error){
@@ -208,7 +221,7 @@ async function submitLogin(){
     return;
   }
 
-  const { error } = await db.auth.signInWithPassword({ email, password: senha });
+  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
   if(error){
     msgBox.innerHTML = `<p class="auth-error">${error.message}</p>`;
     return;
@@ -217,52 +230,84 @@ async function submitLogin(){
 }
 
 async function logout(){
-  await db.auth.signOut();
+  await supabase.auth.signOut();
   currentUser = null; currentProfile = null;
   renderAuth();
 }
 
-// ---------- APP DO ARQUITETO ----------
-function renderArquitetoApp(){
+// ---------- APP (lançamento sempre; resumo só para gestor) ----------
+function renderApp(){
+  const isGestor = currentProfile.papel === 'gestor';
+
   document.getElementById('app').innerHTML = `
     <header>
       <div>
-        <p class="eyebrow">Lançamento diário</p>
+        <p class="eyebrow">${isGestor ? 'Painel de gestão' : 'Lançamento diário'}</p>
         <h1>Cronograma de Produção</h1>
-        <p class="subtitle">Dias úteis (segunda a sexta). Uma ou mais atividades por dia.</p>
+        <p class="subtitle">${isGestor ? 'Lance suas próprias atividades ou veja o resumo agregado de todos os arquitetos.' : 'Dias úteis (segunda a sexta). Uma ou mais atividades por dia.'}</p>
       </div>
       <div class="meta-box">
         <div>${currentProfile.nome}</div>
-        <div id="userBadge">arquiteto(a)</div>
+        <div id="userBadge">${isGestor ? 'gestor(a)' : 'arquiteto(a)'}</div>
         <button id="logoutBtn" onclick="logout()">Sair</button>
       </div>
     </header>
 
-    <div class="controls">
-      <div class="field"><label>Ano</label><input type="number" id="yearInput" value="${currentYear}" style="width:80px;" onchange="onYearChange()"></div>
-    </div>
+    ${isGestor ? `
+    <nav class="tabs" id="navTabs">
+      <button class="tab-btn active" data-tab="lancamento">Lançamento</button>
+      <button class="tab-btn" data-tab="resumo">Resumo por pessoa</button>
+    </nav>` : ''}
 
-    <div class="batch-panel">
-      <p class="batch-title">Preencher mesmo projeto em vários dias</p>
-      <div class="batch-grid">
-        <div class="field"><label>Projeto</label><input type="text" id="batch-projeto" placeholder="Nome do projeto"></div>
-        <div class="field"><label>M²</label><input type="number" id="batch-m2" min="0" step="1" placeholder="0"></div>
-        <div class="field"><label>Fase</label><select id="batch-fase">${fieldOptions(FASES, FASES[0])}</select></div>
-        <div class="field"><label>Do dia</label><input type="number" id="batch-de" min="1" max="31" placeholder="1"></div>
-        <div class="field"><label>Até o dia</label><input type="number" id="batch-ate" min="1" max="31" placeholder="31"></div>
-        <button class="add-btn" onclick="applyBatch()">Aplicar ao mês atual</button>
+    <section class="tab-panel active" id="panel-lancamento">
+      <div class="controls">
+        <div class="field"><label>Ano</label><input type="number" id="yearInput" value="${currentYear}" style="width:80px;" onchange="onYearChange()"></div>
       </div>
-      <p class="batch-hint">Preenche Projeto, M² e Fase na primeira atividade de cada dia útil do intervalo. Não sobrescreve uma segunda atividade já lançada no mesmo dia.</p>
-    </div>
 
-    <nav class="month-tabs" id="monthTabs"></nav>
-    <table>
-      <thead>
-        <tr><th>Dia</th><th>Projeto</th><th>Fase</th><th>Tipo de tarefa</th><th>Complex.</th><th>M²</th><th>Horas</th><th>Retrabalho</th><th>Comentários</th><th></th></tr>
-      </thead>
-      <tbody id="dayTableBody"></tbody>
-    </table>
+      <div class="batch-panel">
+        <p class="batch-title">Preencher mesmo projeto em vários dias</p>
+        <div class="batch-grid">
+          <div class="field"><label>Projeto</label><input type="text" id="batch-projeto" placeholder="Nome do projeto"></div>
+          <div class="field"><label>M²</label><input type="number" id="batch-m2" min="0" step="1" placeholder="0"></div>
+          <div class="field"><label>Fase</label><select id="batch-fase">${fieldOptions(FASES, FASES[0])}</select></div>
+          <div class="field"><label>Do dia</label><input type="number" id="batch-de" min="1" max="31" placeholder="1"></div>
+          <div class="field"><label>Até o dia</label><input type="number" id="batch-ate" min="1" max="31" placeholder="31"></div>
+          <button class="add-btn" onclick="applyBatch()">Aplicar ao mês atual</button>
+        </div>
+        <p class="batch-hint">Preenche Projeto, M² e Fase na primeira atividade de cada dia útil do intervalo. Não sobrescreve uma segunda atividade já lançada no mesmo dia.</p>
+      </div>
+
+      <nav class="month-tabs" id="monthTabs"></nav>
+      <table>
+        <thead>
+          <tr><th>Dia</th><th>Projeto</th><th>Fase</th><th>Tipo de tarefa</th><th>Complex.</th><th>M²</th><th>Horas</th><th>Retrabalho</th><th>Comentários</th><th></th></tr>
+        </thead>
+        <tbody id="dayTableBody"></tbody>
+      </table>
+    </section>
+
+    ${isGestor ? `
+    <section class="tab-panel" id="panel-resumo">
+      <div class="summary-grid" id="summaryGrid"></div>
+      <div class="empty-state" id="emptyStateSummary" style="display:none;">Sem dados lançados ainda.</div>
+      <div class="note">
+        Dia sem lançamento não é necessariamente dia sem trabalho. Retrabalho por erro interno e atividades de alta complexidade importam mais do que volume de horas isolado. M²/hora só serve para comparar a mesma pessoa ao longo do tempo — não para ranquear pessoas em projetos de natureza diferente.
+      </div>
+    </section>` : ''}
   `;
+
+  if(isGestor){
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+        if(btn.dataset.tab === 'resumo') loadSummary();
+      });
+    });
+  }
+
   renderMonthTabs();
   loadMonthActivities();
 }
@@ -285,7 +330,7 @@ function onYearChange(){
 }
 
 async function loadMonthActivities(){
-  const { data, error } = await db.from('atividades').select('*')
+  const { data, error } = await supabase.from('atividades').select('*')
     .eq('ano', currentYear).eq('mes', currentMonth);
   if(error){
     alert('Erro ao carregar dados: ' + error.message);
@@ -350,7 +395,7 @@ async function updateActivity(dia, idx, field, value){
   act[field] = value;
 
   if(act.id){
-    const { error } = await db.from('atividades').update({ [field]: value }).eq('id', act.id);
+    const { error } = await supabase.from('atividades').update({ [field]: value }).eq('id', act.id);
     if(error) alert('Erro ao salvar: ' + error.message);
   } else {
     if(!act.projeto) return; // não cria linha vazia no banco
@@ -359,7 +404,7 @@ async function updateActivity(dia, idx, field, value){
       projeto: act.projeto, fase: act.fase, tipo: act.tipo, complexidade: act.complexidade,
       m2: act.m2 || null, horas: act.horas || 0, retrabalho: act.retrabalho, comentario: act.comentario || null
     };
-    const { data, error } = await db.from('atividades').insert(payload).select().single();
+    const { data, error } = await supabase.from('atividades').insert(payload).select().single();
     if(error){ alert('Erro ao salvar: ' + error.message); return; }
     act.id = data.id;
   }
@@ -374,7 +419,7 @@ function addActivity(dia){
 async function removeActivity(dia, idx){
   const act = localActivities[dia][idx];
   if(act.id){
-    const { error } = await db.from('atividades').delete().eq('id', act.id);
+    const { error } = await supabase.from('atividades').delete().eq('id', act.id);
     if(error){ alert('Erro ao remover: ' + error.message); return; }
   }
   localActivities[dia].splice(idx, 1);
@@ -398,42 +443,25 @@ async function applyBatch(){
     const act = localActivities[d][0];
     act.projeto = projeto; act.m2 = m2; act.fase = fase;
     if(act.id){
-      await db.from('atividades').update({ projeto, m2: m2||null, fase }).eq('id', act.id);
+      await supabase.from('atividades').update({ projeto, m2: m2||null, fase }).eq('id', act.id);
     } else {
       const payload = { user_id: currentUser.id, ano: currentYear, mes: currentMonth, dia: d,
         projeto, fase, tipo: act.tipo, complexidade: act.complexidade, m2: m2||null, horas: act.horas||0, retrabalho: act.retrabalho };
-      const { data, error } = await db.from('atividades').insert(payload).select().single();
+      const { data, error } = await supabase.from('atividades').insert(payload).select().single();
       if(!error) act.id = data.id;
     }
   }
   renderDayTable();
 }
 
-// ---------- APP DO GESTOR (só resumo) ----------
-async function renderGestorApp(){
-  document.getElementById('app').innerHTML = `
-    <header>
-      <div>
-        <p class="eyebrow">Painel de gestão</p>
-        <h1>Resumo por pessoa</h1>
-        <p class="subtitle">Dados de todos os arquitetos, agregados automaticamente.</p>
-      </div>
-      <div class="meta-box">
-        <div>${currentProfile.nome}</div>
-        <div id="userBadge">gestor(a)</div>
-        <button id="logoutBtn" onclick="logout()">Sair</button>
-      </div>
-    </header>
-    <div class="summary-grid" id="summaryGrid"></div>
-    <div class="empty-state" id="emptyStateSummary" style="display:none;">Sem dados lançados ainda.</div>
-    <div class="note">
-      Dia sem lançamento não é necessariamente dia sem trabalho. Retrabalho por erro interno e atividades de alta complexidade importam mais do que volume de horas isolado. M²/hora só serve para comparar a mesma pessoa ao longo do tempo — não para ranquear pessoas em projetos de natureza diferente.
-    </div>
-  `;
+// ---------- RESUMO (só carregado quando a aba é aberta, e só existe para gestor) ----------
+async function loadSummary(){
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = '<p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>';
 
-  const { data, error } = await db.from('atividades').select('*, profiles(nome)');
+  const { data, error } = await supabase.from('atividades').select('*, profiles(nome)');
   if(error){
-    document.getElementById('summaryGrid').innerHTML = `<p class="auth-error">Erro ao carregar dados: ${error.message}</p>`;
+    grid.innerHTML = `<p class="auth-error">Erro ao carregar dados: ${error.message}</p>`;
     return;
   }
 
@@ -447,11 +475,12 @@ async function renderGestorApp(){
     diasPorPessoa[nome].add(row.ano+'-'+row.mes+'-'+row.dia);
   });
 
-  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = '';
   if(Object.keys(porPessoa).length===0){
     document.getElementById('emptyStateSummary').style.display='block';
     return;
   }
+  document.getElementById('emptyStateSummary').style.display='none';
 
   const maxHoras = Math.max(...Object.values(porPessoa).map(arr=>arr.reduce((s,a)=>s+(parseFloat(a.horas)||0),0)));
 
@@ -505,7 +534,7 @@ async function renderGestorApp(){
   });
 }
 
-boot();
+boot().catch(e => showFatalError('Erro inesperado: ' + e.message + '<br><br>Abra o Console do navegador (F12) para ver o detalhe técnico completo.'));
 </script>
 </body>
 </html>
