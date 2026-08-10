@@ -6,90 +6,101 @@
 <title>Cronograma de Produção — Equipe de Arquitetura</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Jost:wght@500;600&display=swap');
   :root{
     --paper:#F1EEE7; --ink:#1E2A32; --ink-soft:#4B5A63; --line:#C9C2B4;
     --navy:#2B4257; --navy-deep:#1B2E3D; --brick:#A85736; --ok:#3E6B4F;
     --paper-card:#FBFAF6; --disabled:#E4E0D6;
+    --font-label:'Jost', 'Inter', sans-serif;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:var(--paper); color:var(--ink); font-family:'Helvetica Neue', Arial, sans-serif; font-size:14px; line-height:1.4; padding:32px 24px 80px;}
+  body{background:var(--paper); color:var(--ink); font-family:'Inter', 'Helvetica Neue', Arial, sans-serif; font-size:14px; line-height:1.45; padding:40px 32px 80px;}
   .wrap{max-width:1240px; margin:0 auto;}
-  header{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid var(--navy); padding-bottom:16px; margin-bottom:24px; flex-wrap:wrap; gap:12px;}
-  .eyebrow{font-family:'Courier New', monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--brick); margin:0 0 6px;}
-  h1{font-size:26px; margin:0 0 8px; font-weight:700; color:var(--navy-deep);}
+  header{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid var(--navy); padding-bottom:20px; margin-bottom:28px; flex-wrap:wrap; gap:12px;}
+  .eyebrow{font-family:var(--font-label); font-weight:600; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--brick); margin:0 0 8px;}
+  h1{font-size:30px; margin:0 0 8px; font-weight:800; letter-spacing:-0.3px; color:var(--navy-deep);}
   .subtitle{color:var(--ink-soft); font-size:13.5px; max-width:600px;}
-  .meta-box{font-family:'Courier New', monospace; font-size:11.5px; color:var(--ink-soft); text-align:right;}
+  .meta-box{font-family:var(--font-label); font-weight:500; letter-spacing:0.5px; font-size:11.5px; color:var(--ink-soft); text-align:right;}
   #userBadge{font-size:12px; color:var(--ink-soft); margin-top:4px;}
-  #logoutBtn{background:none; border:1px solid var(--line); color:var(--ink-soft); padding:6px 12px; font-size:12px; cursor:pointer; margin-top:6px;}
+  #logoutBtn{background:none; border:1px solid var(--line); color:var(--ink-soft); padding:6px 12px; font-size:12px; cursor:pointer; margin-top:6px; border-radius:2px; transition:all .15s ease;}
+  #logoutBtn:hover{border-color:var(--brick); color:var(--brick);}
 
-  .auth-box{max-width:380px; margin:80px auto; background:var(--paper-card); border:1px solid var(--line); padding:28px;}
-  .auth-box h2{margin:0 0 6px; font-size:18px; color:var(--navy-deep);}
+  .auth-box{max-width:380px; margin:80px auto; background:var(--paper-card); border:1px solid var(--line); border-radius:3px; padding:32px; box-shadow:0 12px 32px rgba(30,42,50,0.08);}
+  .auth-box h2{margin:0 0 6px; font-size:19px; font-weight:800; letter-spacing:-0.2px; color:var(--navy-deep);}
   .auth-box p.hint{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
-  .auth-box label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); margin-bottom:4px; margin-top:14px;}
-  .auth-box input{width:100%; padding:10px; border:1px solid var(--line); font-size:14px;}
-  .auth-box button{width:100%; margin-top:18px; padding:11px; background:var(--navy); color:#fff; border:none; font-weight:600; cursor:pointer; font-size:14px;}
-  .auth-box button:hover{background:var(--navy-deep);}
+  .auth-box label{display:block; font-family:var(--font-label); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:1.5px; color:var(--ink-soft); margin-bottom:4px; margin-top:14px;}
+  .auth-box input{width:100%; padding:10px; border:1px solid var(--line); border-radius:2px; font-size:14px; font-family:'Inter', sans-serif;}
+  .auth-box button{width:100%; margin-top:18px; padding:12px; background:var(--brick); color:#fff; border:none; border-radius:2px; font-weight:700; letter-spacing:0.3px; cursor:pointer; font-size:14px; transition:background .15s ease;}
+  .auth-box button:hover{background:#8f462b;}
   .auth-box .switch{margin-top:14px; font-size:12.5px; text-align:center; color:var(--ink-soft);}
   .auth-box .switch a{color:var(--navy); cursor:pointer; text-decoration:underline;}
   .auth-error{color:var(--brick); font-size:12.5px; margin-top:10px;}
   .auth-ok{color:var(--ok); font-size:12.5px; margin-top:10px;}
 
-  .controls{display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; background:var(--paper-card); border:1px solid var(--line); padding:16px 20px; margin-bottom:20px;}
-  .field label{display:block; font-family:'Courier New', monospace; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;}
-  .field select, .field input{padding:8px; border:1px solid var(--line); background:#fff; font-size:13px; font-family:inherit;}
+  .controls{display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; background:var(--paper-card); border:1px solid var(--line); border-radius:3px; padding:18px 20px; margin-bottom:20px; box-shadow:0 4px 14px rgba(30,42,50,0.05);}
+  .field label{display:block; font-family:var(--font-label); font-weight:600; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:5px;}
+  .field select, .field input{padding:8px; border:1px solid var(--line); border-radius:2px; background:#fff; font-size:13px; font-family:'Inter', sans-serif;}
 
   nav.tabs{display:flex; gap:2px; margin-bottom:20px;}
-  .tab-btn{font-family:'Courier New', monospace; font-size:12px; letter-spacing:1px; text-transform:uppercase; padding:10px 18px; background:var(--paper-card); border:1px solid var(--line); border-bottom:none; cursor:pointer; color:var(--ink-soft);}
+  .tab-btn{font-family:var(--font-label); font-weight:600; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; padding:11px 20px; background:var(--paper-card); border:1px solid var(--line); border-bottom:none; border-radius:3px 3px 0 0; cursor:pointer; color:var(--ink-soft); transition:all .15s ease;}
   .tab-btn.active{background:var(--navy); color:var(--paper); border-color:var(--navy);}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
 
-  .batch-panel{background:#F7F4EC; border:1px dashed var(--navy); padding:16px 20px; margin-bottom:20px;}
-  .batch-title{font-family:'Courier New', monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--navy); margin:0 0 12px;}
+  .batch-panel{background:#F7F4EC; border:1px dashed var(--navy); border-radius:3px; padding:18px 20px; margin-bottom:20px;}
+  .batch-title{font-family:var(--font-label); font-weight:600; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--navy); margin:0 0 12px;}
   .batch-grid{display:flex; gap:10px; align-items:end; flex-wrap:wrap;}
   .batch-grid .field{min-width:110px;}
-  .batch-grid input, .batch-grid select{width:100%; padding:8px; border:1px solid var(--line); background:#fff; font-size:13px;}
+  .batch-grid input, .batch-grid select{width:100%; padding:8px; border:1px solid var(--line); border-radius:2px; background:#fff; font-size:13px; font-family:'Inter', sans-serif;}
   .batch-hint{font-size:11.5px; color:var(--ink-soft); margin:10px 0 0;}
-  .add-btn{background:var(--navy); color:#fff; border:none; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;}
-  .add-btn:hover{background:var(--navy-deep);}
+  .add-btn{background:var(--brick); color:#fff; border:none; border-radius:2px; padding:10px 18px; font-size:13px; font-weight:700; letter-spacing:0.3px; cursor:pointer; transition:background .15s ease;}
+  .add-btn:hover{background:#8f462b;}
 
   nav.month-tabs{display:flex; gap:1px; margin-bottom:16px; flex-wrap:wrap;}
-  .month-btn{font-family:'Courier New', monospace; font-size:11px; text-transform:uppercase; padding:6px 10px; background:#fff; border:1px solid var(--line); cursor:pointer; color:var(--ink-soft);}
+  .month-btn{font-family:var(--font-label); font-weight:600; font-size:11px; letter-spacing:1px; text-transform:uppercase; padding:7px 12px; background:#fff; border:1px solid var(--line); border-radius:2px; cursor:pointer; color:var(--ink-soft); transition:all .15s ease;}
   .month-btn.active{background:var(--brick); color:#fff; border-color:var(--brick);}
 
+  nav.architect-tabs{display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap;}
+  .architect-btn{font-family:var(--font-label); font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase; padding:9px 16px; background:#fff; border:1px solid var(--navy); border-radius:2px; cursor:pointer; color:var(--navy); transition:all .15s ease;}
+  .architect-btn.active{background:var(--navy); color:#fff;}
+  .ro-cell{color:var(--ink); font-size:12.5px; padding:6px 6px;}
+  .ro-cell.ro-empty{color:var(--ink-soft); font-style:italic;}
+  .ro-cell.retrabalho-erro{color:var(--brick); font-weight:600;}
+
   table{width:100%; border-collapse:collapse; font-size:12.5px;}
-  thead th{text-align:left; font-family:'Courier New', monospace; font-size:10px; text-transform:uppercase; color:var(--ink-soft); border-bottom:1px solid var(--ink); padding:7px 6px;}
-  tbody td{padding:4px 6px; border-bottom:1px solid var(--line); vertical-align:top;}
-  .day-cell{width:56px; padding-top:8px !important;}
-  .day-num{font-family:'Courier New', monospace; font-weight:700; color:var(--navy-deep); display:block;}
-  .dow{font-size:10px; color:var(--ink-soft); font-family:'Courier New', monospace; text-transform:uppercase; display:block;}
-  .day-total{font-size:10.5px; font-family:'Courier New', monospace; margin-top:4px; color:var(--ok); display:block;}
+  thead th{text-align:left; font-family:var(--font-label); font-weight:600; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-soft); border-bottom:2px solid var(--navy); padding:9px 6px;}
+  tbody td{padding:5px 6px; border-bottom:1px solid var(--line); vertical-align:top;}
+  .day-cell{width:56px; padding-top:9px !important;}
+  .day-num{font-family:'Inter', sans-serif; font-weight:800; color:var(--navy-deep); display:block;}
+  .dow{font-size:10px; color:var(--ink-soft); font-family:var(--font-label); font-weight:500; letter-spacing:0.5px; text-transform:uppercase; display:block;}
+  .day-total{font-size:10.5px; font-family:'Inter', sans-serif; font-weight:600; margin-top:4px; color:var(--ok); display:block;}
   .day-total.over{color:var(--brick); font-weight:700;}
-  td input, td select{width:100%; padding:5px 6px; border:1px solid var(--line); background:#fff; font-size:12.5px; font-family:inherit;}
+  td input, td select{width:100%; padding:6px 6px; border:1px solid var(--line); border-radius:2px; background:#fff; font-size:12.5px; font-family:'Inter', sans-serif;}
   td input[type="number"]{width:60px;}
   select.retrabalho-erro{color:var(--brick); font-weight:600;}
   select.retrabalho-cliente{color:var(--ink-soft);}
-  .icon-btn{background:#fff; border:1px solid var(--line); color:var(--ink-soft); cursor:pointer; font-size:13px; width:26px; height:26px; padding:0;}
+  .icon-btn{background:#fff; border:1px solid var(--line); border-radius:2px; color:var(--ink-soft); cursor:pointer; font-size:13px; width:26px; height:26px; padding:0; transition:all .15s ease;}
   .icon-btn.add-act{color:var(--navy); border-color:var(--navy); font-weight:700;}
   .icon-btn.add-act:hover{background:var(--navy); color:#fff;}
   .icon-btn.del-act:hover{background:var(--brick); color:#fff; border-color:var(--brick);}
   .act-actions{display:flex; gap:4px;}
 
-  .summary-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:14px; margin-bottom:24px;}
-  .person-card{border:1px solid var(--line); background:#fff; padding:16px;}
-  .person-card h3{margin:0 0 12px; font-size:15px; color:var(--navy-deep); border-bottom:1px solid var(--line); padding-bottom:8px;}
+  .summary-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:16px; margin-bottom:24px;}
+  .person-card{border:1px solid var(--line); border-radius:3px; background:#fff; padding:20px; box-shadow:0 6px 18px rgba(30,42,50,0.06); transition:box-shadow .2s ease;}
+  .person-card:hover{box-shadow:0 10px 26px rgba(30,42,50,0.1);}
+  .person-card h3{margin:0 0 14px; font-size:16px; font-weight:800; letter-spacing:-0.2px; color:var(--navy-deep); border-bottom:1px solid var(--line); padding-bottom:10px;}
   .stat-row{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; color:var(--ink-soft);}
-  .stat-row strong{color:var(--ink); font-family:'Courier New', monospace;}
+  .stat-row strong{color:var(--ink); font-family:'Inter', sans-serif; font-weight:700;}
   .stat-row.highlight strong{color:var(--brick);}
-  .bar-track{height:5px; background:var(--paper); margin-top:2px; overflow:hidden;}
-  .bar-fill{height:100%; background:var(--navy);}
-  .breakdown-title{font-family:'Courier New', monospace; font-size:10px; text-transform:uppercase; color:var(--ink-soft); margin:14px 0 6px;}
+  .bar-track{height:5px; border-radius:3px; background:var(--paper); margin-top:2px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--brick);}
+  .breakdown-title{font-family:var(--font-label); font-weight:600; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 7px;}
   .breakdown-row{display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;}
-  .breakdown-row span:last-child{font-family:'Courier New', monospace; color:var(--ink-soft);}
+  .breakdown-row span:last-child{font-family:'Inter', sans-serif; font-weight:600; color:var(--ink-soft);}
   .empty-state{padding:40px 20px; text-align:center; color:var(--ink-soft); font-size:13px;}
-  .note{font-size:12px; color:var(--ink-soft); border-left:2px solid var(--brick); padding:10px 14px; background:#F7EFE9; margin-top:20px;}
-  .loading{padding:60px; text-align:center; color:var(--ink-soft); font-family:'Courier New', monospace;}
+  .note{font-size:12px; color:var(--ink-soft); border-left:2px solid var(--brick); border-radius:0 2px 2px 0; padding:10px 14px; background:#F7EFE9; margin-top:20px;}
+  .loading{padding:60px; text-align:center; color:var(--ink-soft); font-family:var(--font-label); letter-spacing:1px; text-transform:uppercase; font-size:12px;}
 </style>
 </head>
 <body>
@@ -131,6 +142,8 @@ let currentProfile = null; // {id, nome, papel}
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let localActivities = {}; // key "dia" -> array de atividades (com id do banco)
+let currentArchitects = []; // [{id, nome}] — só usado pelo gestor
+let selectedArchitectId = null; // arquiteto selecionado na visão do gestor
 
 function fieldOptions(list, selected){
   return list.map(o => `<option value="${o}" ${o===selected?'selected':''}>${o}</option>`).join('');
@@ -235,16 +248,20 @@ async function logout(){
   renderAuth();
 }
 
-// ---------- APP (lançamento sempre; resumo só para gestor) ----------
-function renderApp(){
+// ---------- APP (arquiteto lança os próprios dados; gestor só visualiza por arquiteto) ----------
+async function renderApp(){
   const isGestor = currentProfile.papel === 'gestor';
+
+  if(isGestor){
+    await loadArchitectsList();
+  }
 
   document.getElementById('app').innerHTML = `
     <header>
       <div>
         <p class="eyebrow">${isGestor ? 'Painel de gestão' : 'Lançamento diário'}</p>
         <h1>Cronograma de Produção</h1>
-        <p class="subtitle">${isGestor ? 'Lance suas próprias atividades ou veja o resumo agregado de todos os arquitetos.' : 'Dias úteis (segunda a sexta). Uma ou mais atividades por dia.'}</p>
+        <p class="subtitle">${isGestor ? 'Veja os lançamentos de cada arquiteto ou o resumo agregado da equipe. O gestor não lança atividades próprias aqui.' : 'Dias úteis (segunda a sexta). Uma ou mais atividades por dia.'}</p>
       </div>
       <div class="meta-box">
         <div>${currentProfile.nome}</div>
@@ -255,7 +272,7 @@ function renderApp(){
 
     ${isGestor ? `
     <nav class="tabs" id="navTabs">
-      <button class="tab-btn active" data-tab="lancamento">Lançamento</button>
+      <button class="tab-btn active" data-tab="lancamento">Lançamentos por arquiteto</button>
       <button class="tab-btn" data-tab="resumo">Resumo por pessoa</button>
     </nav>` : ''}
 
@@ -264,6 +281,12 @@ function renderApp(){
         <div class="field"><label>Ano</label><input type="number" id="yearInput" value="${currentYear}" style="width:80px;" onchange="onYearChange()"></div>
       </div>
 
+      <nav class="month-tabs" id="monthTabs"></nav>
+
+      ${isGestor ? `
+      <nav class="architect-tabs" id="architectTabs"></nav>
+      <div class="empty-state" id="emptyStateArchitects" style="display:none;">Nenhum arquiteto cadastrado ainda.</div>
+      ` : `
       <div class="batch-panel">
         <p class="batch-title">Preencher mesmo projeto em vários dias</p>
         <div class="batch-grid">
@@ -275,12 +298,11 @@ function renderApp(){
           <button class="add-btn" onclick="applyBatch()">Aplicar ao mês atual</button>
         </div>
         <p class="batch-hint">Preenche Projeto, M² e Fase na primeira atividade de cada dia útil do intervalo. Não sobrescreve uma segunda atividade já lançada no mesmo dia.</p>
-      </div>
+      </div>`}
 
-      <nav class="month-tabs" id="monthTabs"></nav>
-      <table>
+      <table id="dayTable">
         <thead>
-          <tr><th>Dia</th><th>Projeto</th><th>Fase</th><th>Tipo de tarefa</th><th>Complex.</th><th>M²</th><th>Horas</th><th>Retrabalho</th><th>Comentários</th><th></th></tr>
+          <tr><th>Dia</th><th>Projeto</th><th>Fase</th><th>Tipo de tarefa</th><th>Complex.</th><th>M²</th><th>Horas</th><th>Retrabalho</th><th>Comentários</th>${isGestor ? '' : '<th></th>'}</tr>
         </thead>
         <tbody id="dayTableBody"></tbody>
       </table>
@@ -309,7 +331,48 @@ function renderApp(){
   }
 
   renderMonthTabs();
-  loadMonthActivities();
+  if(isGestor){
+    renderArchitectTabs();
+    document.getElementById('emptyStateArchitects').style.display = currentArchitects.length===0 ? 'block' : 'none';
+    document.getElementById('dayTable').style.display = currentArchitects.length===0 ? 'none' : 'table';
+  }
+  refreshDayView();
+}
+
+// ---------- Lista de arquitetos (usada só pelo gestor) ----------
+async function loadArchitectsList(){
+  const { data, error } = await sb.from('profiles').select('id,nome').eq('papel','arquiteto').order('nome');
+  if(error){
+    currentArchitects = [];
+    return;
+  }
+  currentArchitects = data || [];
+  if(!selectedArchitectId && currentArchitects.length>0){
+    selectedArchitectId = currentArchitects[0].id;
+  }
+}
+
+function renderArchitectTabs(){
+  const nav = document.getElementById('architectTabs');
+  if(!nav) return;
+  nav.innerHTML = '';
+  currentArchitects.forEach(arch=>{
+    const btn = document.createElement('button');
+    btn.className = 'architect-btn' + (arch.id===selectedArchitectId ? ' active':'');
+    btn.textContent = arch.nome;
+    btn.onclick = ()=>{ selectedArchitectId = arch.id; renderArchitectTabs(); loadArchitectMonthActivities(selectedArchitectId); };
+    nav.appendChild(btn);
+  });
+}
+
+// ---------- Dispatcher: cada papel carrega os dados do jeito certo ----------
+function refreshDayView(){
+  const isGestor = currentProfile.papel === 'gestor';
+  if(isGestor){
+    loadArchitectMonthActivities(selectedArchitectId);
+  } else {
+    loadMonthActivities();
+  }
 }
 
 function renderMonthTabs(){
@@ -319,19 +382,20 @@ function renderMonthTabs(){
     const btn = document.createElement('button');
     btn.className = 'month-btn' + (idx===currentMonth ? ' active':'');
     btn.textContent = m;
-    btn.onclick = ()=>{ currentMonth = idx; renderMonthTabs(); loadMonthActivities(); };
+    btn.onclick = ()=>{ currentMonth = idx; renderMonthTabs(); refreshDayView(); };
     nav.appendChild(btn);
   });
 }
 
 function onYearChange(){
   currentYear = parseInt(document.getElementById('yearInput').value) || new Date().getFullYear();
-  loadMonthActivities();
+  refreshDayView();
 }
 
+// ---------- Visão do arquiteto: carrega e edita SÓ os próprios lançamentos ----------
 async function loadMonthActivities(){
   const { data, error } = await sb.from('atividades').select('*')
-    .eq('ano', currentYear).eq('mes', currentMonth);
+    .eq('ano', currentYear).eq('mes', currentMonth).eq('user_id', currentUser.id);
   if(error){
     alert('Erro ao carregar dados: ' + error.message);
     return;
@@ -342,6 +406,75 @@ async function loadMonthActivities(){
     localActivities[row.dia].push(row);
   });
   renderDayTable();
+}
+
+// ---------- Visão do gestor: carrega os lançamentos do arquiteto selecionado, somente leitura ----------
+async function loadArchitectMonthActivities(architectId){
+  const body = document.getElementById('dayTableBody');
+  if(!architectId){
+    if(body) body.innerHTML = '';
+    return;
+  }
+  const { data, error } = await sb.from('atividades').select('*')
+    .eq('ano', currentYear).eq('mes', currentMonth).eq('user_id', architectId);
+  if(error){
+    alert('Erro ao carregar dados: ' + error.message);
+    return;
+  }
+  localActivities = {};
+  (data || []).forEach(row=>{
+    if(!localActivities[row.dia]) localActivities[row.dia] = [];
+    localActivities[row.dia].push(row);
+  });
+  renderDayTableReadOnly();
+}
+
+function renderDayTableReadOnly(){
+  const body = document.getElementById('dayTableBody');
+  const nDays = daysInMonth(currentYear, currentMonth);
+  body.innerHTML = '';
+
+  for(let d=1; d<=nDays; d++){
+    const dow = new Date(currentYear, currentMonth, d).getDay();
+    if(dow===0 || dow===6) continue;
+
+    const acts = (localActivities[d] && localActivities[d].length>0) ? localActivities[d] : null;
+
+    if(!acts){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="day-cell"><span class="day-num">${d}</span><span class="dow">${DOW[dow]}</span></td>
+        <td class="ro-cell ro-empty" colspan="8">Sem lançamento</td>
+      `;
+      body.appendChild(tr);
+      continue;
+    }
+
+    const totalHoras = acts.reduce((s,a)=>s+(parseFloat(a.horas)||0),0);
+    const totalClass = totalHoras > 8 ? 'day-total over' : 'day-total';
+
+    acts.forEach((a, idx)=>{
+      const tr = document.createElement('tr');
+      let dayCellHtml = '';
+      if(idx===0){
+        dayCellHtml = `<td class="day-cell" rowspan="${acts.length}">
+          <span class="day-num">${d}</span><span class="dow">${DOW[dow]}</span>
+          <span class="${totalClass}">${totalHoras}h/dia</span></td>`;
+      }
+      tr.innerHTML = `
+        ${dayCellHtml}
+        <td class="ro-cell">${a.projeto || '—'}</td>
+        <td class="ro-cell">${a.fase || '—'}</td>
+        <td class="ro-cell">${a.tipo || '—'}</td>
+        <td class="ro-cell">${a.complexidade || '—'}</td>
+        <td class="ro-cell">${a.m2 || '—'}</td>
+        <td class="ro-cell">${a.horas || '0'}</td>
+        <td class="ro-cell ${a.retrabalho==='Erro interno' ? 'retrabalho-erro' : ''}">${a.retrabalho || '—'}</td>
+        <td class="ro-cell">${a.comentario || '—'}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
 }
 
 function renderDayTable(){
