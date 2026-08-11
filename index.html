@@ -130,6 +130,14 @@ if(!SUPABASE_URL || SUPABASE_URL.includes('COLOQUE_AQUI') || !SUPABASE_ANON_KEY 
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Quando o usuário clica no link de e-mail de "esqueci minha senha", o Supabase
+// redireciona de volta para este site e dispara o evento PASSWORD_RECOVERY.
+sb.auth.onAuthStateChange((event, session) => {
+  if(event === 'PASSWORD_RECOVERY'){
+    renderResetPassword();
+  }
+});
+
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const DOW = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const FASES = ['Orçamento','Anteprojeto','Executivo','Apresentação'];
@@ -188,16 +196,76 @@ function renderAuth(errorMsg){
       <div class="switch">
         <span id="switchText">Não tem conta? <a onclick="toggleAuthMode()">Criar conta</a></span>
       </div>
+      <div class="switch" id="forgotWrap" style="margin-top:6px;">
+        <a onclick="submitForgotPassword()">Esqueci minha senha</a>
+      </div>
       <div id="authMsg"></div>
     </div>
   `;
   if(errorMsg) document.getElementById('authMsg').innerHTML = `<p class="auth-error">${errorMsg}</p>`;
 }
 
+async function submitForgotPassword(){
+  const email = document.getElementById('authEmail').value.trim();
+  const msgBox = document.getElementById('authMsg');
+  msgBox.innerHTML = '';
+  if(!email){
+    msgBox.innerHTML = '<p class="auth-error">Digite seu e-mail no campo acima e clique em "Esqueci minha senha" de novo.</p>';
+    return;
+  }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if(error){
+    msgBox.innerHTML = `<p class="auth-error">${error.message}</p>`;
+    return;
+  }
+  msgBox.innerHTML = '<p class="auth-ok">Se esse e-mail estiver cadastrado, enviamos um link para redefinir a senha. Confira a caixa de entrada (e o spam).</p>';
+}
+
+// ---------- TELA DE DEFINIR NOVA SENHA (após clicar no link do e-mail) ----------
+function renderResetPassword(){
+  document.getElementById('app').innerHTML = `
+    <div class="auth-box">
+      <h2>Definir nova senha</h2>
+      <p class="hint">Escolha uma nova senha para sua conta.</p>
+      <label>Nova senha</label>
+      <input type="password" id="newPassword" placeholder="••••••••">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="newPasswordConfirm" placeholder="••••••••">
+      <button onclick="submitNewPassword()">Salvar nova senha</button>
+      <div id="resetMsg"></div>
+    </div>
+  `;
+}
+
+async function submitNewPassword(){
+  const p1 = document.getElementById('newPassword').value;
+  const p2 = document.getElementById('newPasswordConfirm').value;
+  const msgBox = document.getElementById('resetMsg');
+  msgBox.innerHTML = '';
+  if(!p1 || p1.length < 6){
+    msgBox.innerHTML = '<p class="auth-error">A senha precisa ter pelo menos 6 caracteres.</p>';
+    return;
+  }
+  if(p1 !== p2){
+    msgBox.innerHTML = '<p class="auth-error">As senhas não coincidem.</p>';
+    return;
+  }
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  if(error){
+    msgBox.innerHTML = `<p class="auth-error">${error.message}</p>`;
+    return;
+  }
+  msgBox.innerHTML = '<p class="auth-ok">Senha atualizada! Entrando...</p>';
+  setTimeout(()=>{ boot(); }, 1200);
+}
+
 let authMode = 'login';
 function toggleAuthMode(){
   authMode = authMode === 'login' ? 'signup' : 'login';
   document.getElementById('authTitle').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('forgotWrap').style.display = authMode === 'login' ? 'block' : 'none';
   document.getElementById('nomeField').style.display = authMode === 'signup' ? 'block' : 'none';
   document.getElementById('authSubmitBtn').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta';
   document.getElementById('switchText').innerHTML = authMode === 'login'
